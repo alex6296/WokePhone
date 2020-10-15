@@ -20,4 +20,12 @@
         android:text="LocationText"
         map:layout_constraintEnd_toEndOf="parent"
         map:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/bikeData"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Bike Data"
+        map:layout_constraintBottom_toBottomOf="parent"
+        map:layout_constraintStart_toStartOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

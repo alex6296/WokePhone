@@ -36,5 +36,9 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 
     //external
-    implementation 'com.karumi:dexter:6.2.1'
+    implementation 'com.karumi:dexter:6.2.1' //permission
+
+    //gson converter
+    implementation 'com.google.code.gson:gson:2.8.5'
+
 }
