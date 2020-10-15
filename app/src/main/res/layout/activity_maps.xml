@@ -25,7 +25,31 @@
         android:id="@+id/bikeData"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Bike Data"
+        android:text="Raw"
         map:layout_constraintBottom_toBottomOf="parent"
         map:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/meanButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mean"
+        map:layout_constraintBottom_toBottomOf="parent"
+        map:layout_constraintStart_toEndOf="@+id/bikeData" />
+
+    <Button
+        android:id="@+id/medianbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Median"
+        map:layout_constraintBottom_toBottomOf="parent"
+        map:layout_constraintStart_toEndOf="@+id/meanButton" />
+
+    <Button
+        android:id="@+id/clearbutton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clear"
+        map:layout_constraintBottom_toBottomOf="parent"
+        map:layout_constraintEnd_toEndOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
