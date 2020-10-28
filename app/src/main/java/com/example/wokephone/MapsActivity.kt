@@ -25,7 +25,8 @@ import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
-import kotlinx.android.synthetic.main.activity_maps.*
+import kotlin.Comparator
+import kotlin.collections.ArrayList
 
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
@@ -37,7 +38,12 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
     private lateinit var mMap: GoogleMap
     private lateinit var currentLocation: Location
     private lateinit var mapTextView: TextView
-    private lateinit var bikeDataButton : Button
+    //buttons
+    private lateinit var rawButton : Button
+    private lateinit var meanButton : Button
+    private lateinit var medianButton : Button
+    private lateinit var clearButton : Button
+
     //location utilities
     private var LOCATION_REFRESH_TIME: Long = 1000
     private var LOCATION_REFRESH_DISTANCE: Float = 1000F
@@ -61,10 +67,8 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
 
         //Layout
         mapTextView = findViewById(R.id.MaptextField)
-        bikeDataButton = findViewById(R.id.bikeData)
-        bikeDataButton.setOnClickListener {
-            addBikeRoute()
-        }
+        setButtons()
+
 
         //permission checker
         Dexter.withContext(this@MapsActivity)
@@ -108,8 +112,144 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
         val mapFragment = supportFragmentManager
             .findFragmentById(R.id.map) as SupportMapFragment
         mapFragment.getMapAsync(this)
+    }
 
+    private fun setButtons() {
+        rawButton = findViewById(R.id.bikeData)
+        rawButton.setOnClickListener {
+            addBikeRoute()
+        }
+        meanButton = findViewById(R.id.meanButton)
+        meanButton.setOnClickListener {
+            addMeanBikeRoute()
+        }
+        medianButton = findViewById(R.id.medianbutton)
+        medianButton.setOnClickListener {
+            addMedianBikeRoute()
+        }
+        clearButton = findViewById(R.id.clearbutton)
+        clearButton.setOnClickListener {
+            mMap.clear()
+        }
+    }
 
+    private fun addMedianBikeRoute() {
+        val options = PolylineOptions().width(5f).color(Color.GREEN).geodesic(true)
+        if (bikePoints != null) {
+            val latPoints =  ArrayList<Double>()
+            val longPoints = ArrayList<Double>()
+
+            //create lat and long lists
+            for (element in bikePoints!!) {
+                val point: LatLng = element.toLatLng()
+                    latPoints.add(point.latitude)
+                    longPoints.add(point.longitude)
+            }
+
+            //GetMedians
+            val latMedianPoints =  ArrayList<Double>()
+            val longMedianPoints = ArrayList<Double>()
+
+            //get median for lat
+            for (z in 0 until latPoints.size) {
+               val box = getFivePointsBefore(latPoints, z)
+                box.sortWith { c1, c2 ->
+                    java.lang.Double.compare(c1, c2)
+                }
+                val medianPoint = median(box)
+                latMedianPoints.add(medianPoint)
+            }
+            //get median for long
+            for (z in 0 until longPoints.size) {
+                val box = getFivePointsBefore(longPoints, z)
+                box.sortWith { c1, c2 ->
+                    java.lang.Double.compare(c1, c2)
+                }
+                val medianPoint = median(box)
+                longMedianPoints.add(medianPoint)
+            }
+            //add points to route
+            for (z in 0 until bikePoints!!.size) {
+                val point: LatLng = LatLng(latMedianPoints[z],longMedianPoints[z])
+                options.add(point)
+            }
+            val line = mMap.addPolyline(options)
+
+            butifyRoute(bikePoints)
+        }
+    }
+
+    private fun getFivePointsBefore(bikePoints: List<Double>, index: Int): ArrayList<Double> {
+        var res = ArrayList<Double>()
+        var start = index-5
+
+        //avoid index out of bounds
+        if(index-5 < 0){
+            start = 0
+        }
+
+        for (z in start until index+1){
+            res.add(bikePoints[z])
+        }
+        return res
+    }
+
+    // the array double[] m MUST BE SORTED
+    private fun median(m: ArrayList<Double>): Double {
+        val middle = m.size / 2
+        return if (m.size % 2 == 1) {
+            m[middle]
+        } else {
+            (m[middle - 1] + m[middle]) / 2.0
+        }
+    }
+
+    private fun addMeanBikeRoute() {
+        val options = PolylineOptions().width(5f).color(Color.RED).geodesic(true)
+        if (bikePoints != null) {
+            val latPoints =  ArrayList<Double>()
+            val longPoints = ArrayList<Double>()
+
+            //create lat and long lists
+            for (element in bikePoints!!) {
+                val point: LatLng = element.toLatLng()
+                latPoints.add(point.latitude)
+                longPoints.add(point.longitude)
+            }
+
+            //GetMedians
+            val latMedianPoints =  ArrayList<Double>()
+            val longMedianPoints = ArrayList<Double>()
+
+            //get median for lat
+            for (z in 0 until latPoints.size) {
+                val box = getFivePointsBefore(latPoints, z)
+                val medianPoint = mean(box.toDoubleArray())
+                latMedianPoints.add(medianPoint)
+            }
+            //get median for long
+            for (z in 0 until longPoints.size) {
+                val box = getFivePointsBefore(longPoints, z)
+                val medianPoint = mean(box.toDoubleArray())
+                longMedianPoints.add(medianPoint)
+            }
+            //add points to route
+            for (z in 0 until bikePoints!!.size) {
+                val point: LatLng = LatLng(latMedianPoints[z],longMedianPoints[z])
+                options.add(point)
+            }
+            val line = mMap.addPolyline(options)
+
+            butifyRoute(bikePoints)
+        }
+    }
+
+    fun mean(m: DoubleArray): Double {
+        var sum = 0.0
+        for (i in m.indices) {
+            sum += m[i]
+        }
+        return sum / m.size
     }
 
     /**
@@ -135,12 +275,16 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback {
             }
             val line = mMap.addPolyline(options)
 
-            val firstL = bikePoints!![0].toLatLng()
-            val midL = bikePoints!![bikePoints!!.size/2].toLatLng()
-            val lastL = bikePoints!![bikePoints!!.size-1].toLatLng()
-            mMap.addMarker(MarkerOptions().position(firstL).title("Start"))
-            mMap.addMarker(MarkerOptions().position(lastL).title("End"))
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(midL,10.5f))
+            butifyRoute(bikePoints)
         }
+    }
+
+    fun butifyRoute(points: List<LocationPoint>?){
+        val firstL = points!![0].toLatLng()
+        val midL = points[points.size / 2].toLatLng()
+        val lastL = points[points.size - 1].toLatLng()
+        mMap.addMarker(MarkerOptions().position(firstL).title("Start"))
+        mMap.addMarker(MarkerOptions().position(lastL).title("End"))
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(midL, 10.5f))
     }
 }
